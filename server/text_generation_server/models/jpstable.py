@@ -4,7 +4,7 @@ import torch.distributed
 from typing import Optional
 
 from transformers import (
-    AutoTokenizer,
+    LlamaTokenizer,
     AutoConfig,
 )
 from text_generation_server.models import CausalLM
@@ -36,31 +36,35 @@ class JPStableLMSharded(CausalLM):
             device = torch.device("cpu")
             dtype = torch.float32 if dtype is None else dtype
 
-        tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer = LlamaTokenizer.from_pretrained(
             "novelai/nerdstash-tokenizer-v1",
             revision=revision,
             padding_side="left",
             truncation_side="left",
-            trust_remote_code=trust_remote_code,
+            trust_remote_code=True,
         )
-        tokenizer.pad_token = tokenizer.eos_token
 
+        # custom modeling trust_remote_code=True
         config = AutoConfig.from_pretrained(
             model_id,
             revision=revision,
-            trust_remote_code=trust_remote_code,
+            trust_remote_code=True,
         )
         config.quantize = quantize
 
-        torch.distributed.barrier(group=self.process_group)
-        filenames = weight_files(model_id, revision=revision, extension=".safetensors")
-        weights = Weights(
-            filenames, device=device, dtype=dtype, process_group=self.process_group
-        )
-        if config.quantize == "gptq":
-            weights._set_gptq_params(model_id)
+        # torch.distributed.barrier(group=self.process_group)
+        # filenames = weight_files(model_id, revision=revision, extension=".safetensors")
+        # weights = Weights(
+        #     filenames, device=device, dtype=dtype, process_group=self.process_group
+        # )
+        # if config.quantize == "gptq":
+        #     weights._set_gptq_params(model_id)
 
-        model = JapaneseStableLMAlphaForCausalLM(config, weights)
+        model = JapaneseStableLMAlphaForCausalLM.from_pretrained(
+            model_id,
+            revision=revision,
+            trust_remote_code=True,
+        )
 
         torch.distributed.barrier(group=self.process_group)
         super(CausalLM, self).__init__(

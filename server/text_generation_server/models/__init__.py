@@ -127,6 +127,15 @@ def get_model(
                 trust_remote_code=trust_remote_code,
             )
 
+    if model_id.endswith("japanese-stablelm-base-alpha-7b"):
+        return JPStableLMSharded(
+            model_id,
+            revision,
+            quantize=quantize,
+            dtype=dtype,
+            trust_remote_code=trust_remote_code,
+        )
+
     config_dict, _ = PretrainedConfig.get_config_dict(
         model_id, revision=revision, trust_remote_code=trust_remote_code
     )
@@ -287,15 +296,6 @@ def get_model(
             )
         else:
             raise NotImplementedError(FLASH_ATT_ERROR_MESSAGE.format("Idefics"))
-
-    if model_id.startswith("japanese-stablelm-base-alpha-7b"):
-        return JPStableLMSharded(
-            model_id,
-            revision,
-            quantize=quantize,
-            dtype=dtype,
-            trust_remote_code=trust_remote_code,
-        )
 
     if sharded:
         raise ValueError("sharded is not supported for AutoModel")
