@@ -18,6 +18,7 @@ from text_generation_server.models.galactica import GalacticaSharded
 from text_generation_server.models.santacoder import SantaCoder
 from text_generation_server.models.t5 import T5Sharded
 from text_generation_server.models.gpt_neox import GPTNeoxSharded
+from text_generation_server.models.jpstable import JPStableLMSharded
 
 # The flag below controls whether to allow TF32 on matmul. This flag defaults to False
 # in PyTorch 1.12 and later.
@@ -286,6 +287,15 @@ def get_model(
             )
         else:
             raise NotImplementedError(FLASH_ATT_ERROR_MESSAGE.format("Idefics"))
+
+    if model_id.startswith("japanese-stablelm-base-alpha-7b"):
+        return JPStableLMSharded(
+            model_id,
+            revision,
+            quantize=quantize,
+            dtype=dtype,
+            trust_remote_code=trust_remote_code,
+        )
 
     if sharded:
         raise ValueError("sharded is not supported for AutoModel")
